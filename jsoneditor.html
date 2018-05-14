@@ -168,13 +168,37 @@
             var clearTree = $("clear_txt");
             var formatTree = $("formatTree");
 
+            var obj = {
+                "array1": [{
+                    "a": "1"
+                }, {
+                    "b": "2"
+                }],
+                "array": [
+                    1,
+                    2,
+                    3
+                ],
+                "boolean": true,
+                "null": null,
+                "number": 123,
+                "object": {
+                    "a": "b",
+                    "c": "d"
+                }
+            }
+
+
+
             function getTreeContent() {
                 var treeText = document.getElementById("tree").innerText;
                 if (/^\s*$/.test(treeText)) return JE.msg('请输入JSON格式的代码!');
                 try {
-                    treeText = treeText.replace(/\ +/g, "").replace(/[\r\n]/g, "");
-                    JE.data = eval('(' + treeText + ')');
+                    /*去除空格和换行符号*/
+                    treeText = treeText.replace(/\ +/g, '').replace(/[\r\n]/g, '').replace(/\s|\xA0/g, "");
+                    JE.data = JSON.parse(treeText);
                 } catch (e) {
+                    console.log(e)
                     return JE.msg("源代码有错误: " + e.description + ' , 如果正在编辑中, 请忽略此消息!', 'err');
                 };
                 return true;
@@ -432,9 +456,10 @@
                 // if (JE.formating) return; /* 格式化不刷新树 */
                 if (/^\s*$/.test(data)) return JE.msg('请输入JSON格式的代码!');
                 try {
-                    JE.data = eval('(' + data + ')');
+                    JE.data = JSON.parse(data);
                 } catch (e) {
-                    JE.editUI.style.color = 'red';
+                    // JE.editUI.style.color = 'red';
+                    console.log(e)
                     return JE.msg("源代码有错误: " + e.description + ' , 如果正在编辑中, 请忽略此消息!', 'err');
                 };
                 // JE.editUI.style.color = '#000';
