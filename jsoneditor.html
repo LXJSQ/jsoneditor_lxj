@@ -4,18 +4,66 @@
 <head>
     <title>JSON EDITOR</title>
     <meta charset="utf-8" />
-    <meta name="keywords" content="刘相军,刘相军个人博客,个人博客模板" />
-    <meta name="description" content="前端新手的网站之路,个人博客" />
+    <meta name="keywords" content="" />
+    <meta name="description" content="" />
     <style>
         body {
             margin: 0;
             padding: 0;
-            /* position: relative; */
+        }
+        
+        #header {
+            background-color: #3883fa;
+        }
+        
+        b,
+        strong {
+            font-weight: normal;
+        }
+        
+        cite,
+        em {
+            font-style: normal;
+        }
+        
+        #header ul {
+            margin: 0 20px;
+            height: 48px;
+        }
+        
+        #tree {
+            margin: 0 20px;
+            height: 100%;
+        }
+        
+        ul li {
+            float: left;
+            list-style: none;
+            height: 48px;
+            line-height: 48px;
+        }
+        
+        ul li:first-child {
+            margin-right: 300px;
+        }
+        
+        ul li:first-child button {
+            margin-left: 20px;
+        }
+        
+        ul li button,
+        select {
+            cursor: pointer;
+            border-radius: 4px;
+            margin-right: 20px;
+            padding: 0 10px;
+            color: #999;
         }
         
         #tree {
             padding-left: 20px;
             position: relative;
+            outline: none;
         }
         
         i {
@@ -25,8 +73,8 @@
             height: 0px;
             border-style: solid;
             border-width: 4px;
-            position: absolute;
-            left: 6px;
+            /* position: absolute;
+            left: 6px; */
         }
         
         .triangle_border_right {
@@ -38,7 +86,7 @@
         }
         
         .boolean {
-            color: #ff8c00;
+            color: #ff0000;
         }
         
         .bracket {
@@ -49,14 +97,20 @@
             color: green;
         }
         
-        button {
+        .string {
+            color: #ff8c00
+        }
+        
+        button,
+        input {
+            cursor: pointer;
             border: none;
             outline: none;
             background-color: white;
             widows: 21px;
             height: 21px;
             padding: 0px;
-            /* vertical-align: middle; */
+            vertical-align: middle;
         }
         
         dl {
@@ -74,18 +128,91 @@
 </head>
 
 <body>
-    <div id="test"></div>
-    <textarea name="" id="json_eidit" cols="30" rows="40"></textarea>
-    <div id="json_editInfo">JSONin</div>
-    <div id="tree" contenteditable="true"></div>
-    <div id="update">刷新</div>
-    <div id="autoUpdate"></div>
 
+    <div id="header">
+        <ul>
+            <li>
+                <label for="file">Upload a JSON file ：</label>
+                <input type="file" name="file" id="fileId" />
+                <button type="submit" name="btn" value="提交" id="btnId" onclick="check()" /> Upload</button>
+            </li>
+            <li>
+                <select name="" id="selectMethod">
+                    <option value="1">tree</option>
+                    <option value="0">code</option>
+                </select>
+            </li>
+            <li id="formatTree"><button>Formatting</button></li>
+            <li id="clear_txt"><button>Clear</button></li>
+            <li id="save_as"><button>Save</button></li>
+        </ul>
+    </div>
+    <div id="tree" contenteditable="true"></div>
+
+
+    <!-- <textarea name="" id="json_eidit" cols="30" rows="10"></textarea> -->
+    <div id="json_editInfo">JSONin</div>
+    <div id="update">刷新</div>
     <div id="format_indent">缩进</div>
-    <div id="format_compress">压缩</div>
-    <div id="clear_txt">清空</div>
-    <div id="save_as">保存</div>
     <script type="text/javascript">
+        window.onload = function() {
+            var $ = function(id) {
+                return document.getElementById(id)
+            };
+            /* 关联UI */
+            JE.editUI = $("json_eidit");
+            JE.msgUI = $("json_editInfo");
+            JE.treeUI = $("tree");
+            var saveJson = $("save_as");
+            var selectMethod = $("selectMethod");
+            var clearTree = $("clear_txt");
+            var formatTree = $("formatTree");
+
+            function getTreeContent() {
+                var treeText = document.getElementById("tree").innerText;
+                if (/^\s*$/.test(treeText)) return JE.msg('请输入JSON格式的代码!');
+                try {
+                    treeText = treeText.replace(/\ +/g, "").replace(/[\r\n]/g, "");
+                    JE.data = eval('(' + treeText + ')');
+                } catch (e) {
+                    return JE.msg("源代码有错误: " + e.description + ' , 如果正在编辑中, 请忽略此消息!', 'err');
+                };
+                return true;
+            }
+            saveJson.onclick = function() {
+                if (getTreeContent()) {
+                    var datastr = "data:json;charset=utf-8," + encodeURIComponent(JSON.stringify(JE.data));
+                    var downloadAnchorNode = document.createElement('a')
+                    downloadAnchorNode.setAttribute("href", datastr);
+                    downloadAnchorNode.setAttribute("download", 'new.json')
+                    downloadAnchorNode.click();
+                    downloadAnchorNode.remove();
+                }
+            }
+            clearTree.onclick = function() {
+                JE.treeUI.innerHTML = "";
+            }
+            formatTree.onclick = function() {
+                formatJson();
+            }
+            selectMethod.onchange = function() {
+                formatJson();
+            }
+            var formatJson = function(compress) {
+                if (selectMethod.value == 0) {
+                    if (getTreeContent()) {
+                        var str = JSON.stringify(JE.data, undefined, 4);
+                        JE.treeUI.innerHTML = "<pre>" + str + "</pre>";
+                    }
+                } else {
+                    if (getTreeContent()) {
+                        JE.msg('语法正确,正在重新构造树,请稍候...', 'busy');
+                        JE.toTree();
+                    }
+                }
+            }
+        }
+
         function show() {
             var dl = document.getElementById(event.target.id.split("_")[0] + "_dl");
             var i = document.getElementById(event.target.id.split("_")[0] + "_i")
@@ -99,6 +226,28 @@
                     eData.split("_")[0] + "_1");
                 dl.childNodes[1].style.display = "block";
                 i.setAttribute("class", "triangle_border_down");
+            }
+        }
+
+        function check() {
+            var objFile = document.getElementById("fileId");
+            var data = null;
+            var files = objFile.files; //获取到文件列表
+            if (files.length == 0) {
+                alert('请选择文件');
+            } else {
+                var reader = new FileReader(); //新建一个FileReader
+                reader.readAsText(files[0], "UTF-8"); //读取文件 
+                reader.onload = function(evt) { //读取完文件之后会回来这里
+                    data = evt.target.result; // 读取文件内容
+                    /*Remove annotation */
+                    var reg = /("([^\\\"]*(\\.)?)*")|('([^\\\']*(\\.)?)*')|(\/{2,}.*?(\r|\n))|(\/\*(\n|.)*?\*\/)/g; // 正则表达式  
+                    data = data.replace(reg, function(word) { // 去除注释后的文本  
+                        return /^\/{2,}/.test(word) || /^\/\*/.test(word) ? "" : word;
+                    });
+                    JE.begin(data);
+                }
+                selectMethod.value = "1";
             }
         }
         JE = {
@@ -140,16 +289,18 @@
                 var draw = [],
                     This = this;
                 JE.firstUp = false; /*完成首次自动构造*/
-                function notify(name /*节点名*/ , value /*节点值*/ ) {
+                function notify(name /*节点名*/ , value /*节点值*/ , bool /*是否为最后一项*/ ) {
+
                     if (value && value.constructor == Array) {
                         /* 处理数组节点 */
                         This.number++;
                         draw.push('<dl id="' + This.number + '_dl"><dt>', This.draw(name, value), '</dt><dd>');
 
                         for (var i = 0; i < value.length; i++) {
-                            notify(i, value[i]);
+                            i == value.length - 1 ? notify(i, value[i], true) : notify(i, value[i], false);
                         }
-                        draw.push('</dd><dt><span class="bracket">]</span></dt></dl>');
+                        var bracket = bool ? "]" : "],"
+                        draw.push('</dd><dt><span class="bracket">' + bracket + '</span></dt></dl>');
                     } else if (value && typeof value == 'object') {
                         /* 处理对象节点 */
                         This.number++;
@@ -162,53 +313,56 @@
                         }
                         for (var key in value) {
                             i++;
-                            notify(key, value[key]);
+                            i == len ? notify(key, value[key], true) : notify(key, value[key], false);
                         }
-                        draw.push('</dd><dt><span class="bracket">}</span></dt></dl>');
+                        var bracket = bool ? "}" : "},"
+                        draw.push('</dd><dt><span class="bracket">' + bracket + '</span></dt></dl>');
                     } else {
                         /* 处理叶节点(绘制文件) */
-                        draw.push('<dl><dt>', This.draw(name, value), '</dt></dl>');
+                        draw.push('<dl><dt>', This.draw(name, value, bool), '</dt></dl>');
                     };
                 };
                 /* 不是[]或者{}不绘制 */
 
                 if (typeof this.data == 'object') {
-                    notify(this.root, this.data);
+                    notify(this.root, this.data, true);
                 };
 
                 if (this.treeUI) this.treeUI.innerHTML = draw.join(''); /* 显示在树窗口 */ {
                     this.msg('成功构造树视图!');
                 }
-
             },
-            draw: function(name, value) { /* 子项HTML构造器 */
+            draw: function(name, value, bool /*是否为最后一项*/ ) {
                 if (typeof name == "number") {
-                    return this.highlight("", value, "[");
+                    if (value && value.constructor == Array) return this.highlight('', value, "[", bool);
+                    else return this.highlight("", value, "{", bool);
                 } else if (typeof name == "string") {
-                    return this.highlight(name + ":", value, "{");
+                    if (value && value.constructor == Array) return this.highlight('"' + name + '"</b><em class="bracket"> : </em>', value, "[", bool);
+                    else return name.length > 0 ?
+                        this.highlight('"' + name + '"</b><em class="bracket"> : </em>', value, "{", bool) :
+                        this.highlight('', value, "{", bool);
                 }
             },
-            highlight: function(str, value, bracket) {
+            highlight: function(nameStr, value, bracket, bool /*是否为最后一项*/ ) {
+                if (typeof value != "string")
+                    var valueStr = bool ? value : value + ",";
                 switch (typeof value) {
                     case "boolean":
-                        return '<span contenteditable="true" class="boolean">' + str + value + ',  </span>'
+                        return '<b  class="string">' + nameStr + ' <strong class="boolean">' + valueStr + '</strong>'
                         break;
                     case "number":
-                        return '<span contenteditable="true" class="number">' + str + value + ', </span>'
+                        return '<b  class="string">' + nameStr + ' <cite class="number">' + valueStr + '</cite>'
                         break;
                     case "string":
-                        return '<span contenteditable="true" class="string">' + str + value + ', </span>'
-                        break;
-                    case "object":
-                        if (value && value.constructor == Array) {
-                            return '<button onclick="show()" id="' + this.number + '_btn" data="' + this.number + '_1">\
-                                    <i class="triangle_border_down"  id="' + this.number + '_i" data="' + this.number + '_1" contenteditable="false"></i></button>\
-                                    <span contenteditable="true" class="bracket">' + str + bracket + '</span>'
-                        } else {
-                            return '<button onclick="show()" id="' + this.number + '_btn" data="' + this.number + '_1">\
-                                    <i class="triangle_border_down"  id="' + this.number + '_i" data="' + this.number + '_1" contenteditable="false"></i></button>\
-                                    <span contenteditable="true" class="bracket">' + str + bracket + '</span>'
+                        {
+                            if (bool) return '<b  class="string">' + nameStr + '<b class ="string">"' + value + '"</b>';
+                            else return '<b  class="string">' + nameStr + '<b class ="string">"' + value + '" ,</b>';
+                            break;
                         }
+                    case "object":
+                        return '<button onclick="show()" id="' + this.number + '_btn" data="' + this.number + '_1">\
+                                <i class="triangle_border_down"  id="' + this.number + '_i" data="' + this.number + '_1" ></i></button>\
+                                <b class="string">' + nameStr + '<em class ="bracket">' + bracket + '</em>';
                 }
             },
             format: function(txt, compress /*是否为压缩模式*/ ) { /* 格式化JSON源码(对象转换为JSON文本) */
@@ -216,10 +370,10 @@
                 try {
                     var data = eval('(' + txt + ')');
                 } catch (e) {
-                    JE.editUI.style.color = 'red';
+                    // JE.editUI.style.color = 'red';
                     return this.msg('数据源语法错误,格式化失败! 错误信息: ' + e.description, 'err');
                 };
-                JE.editUI.style.color = '#000';
+                // JE.editUI.style.color = '#000';
                 var draw = [],
                     last = false,
                     This = this,
@@ -261,128 +415,39 @@
                 this.countInfo = '共处理节点<b>' + nodeCount + '</b>个,最大树深为<b>' + maxDepth + '</b>';
                 return draw.join('');
             },
-            msg: function(text, type) { /* 编辑状态或者错误通知 */
+            msg: function(text, type) {
+                /* 编辑状态或者错误通知 */
                 if (!this.msgUI) return alert(text);
                 with(new Date) var now = ([getHours(), getMinutes(), getSeconds()].join(':')).replace(/\b\d\b/g, '0$&');
                 this.msgUI.innerHTML = '<div>[' + now + ']   ' + text.replace(/\n/g, '<br/>') + '</div>';
                 this.msgUI.className = type;
-            },
-            select: function(sender) {
-                var sub = sender.parentNode.parentNode.getElementsByTagName("INPUT");
-                for (var i = 0; i < sub.length; i++) {
-                    sub[i].checked = sender.checked;
-                }
             }
         };
-        JE.add = function() {
-            this.msg('功能添加中...*_^');
-        }
-        JE.editItem = function() {
-            this.msg('功能添加中...*_^');
-        }
-        JE.begin = function() { /* 设置UI控件关联响应 */
+        JE.begin = function(data) { /* 设置UI控件关联响应 */
             var $ = function(id) {
                 return document.getElementById(id)
             };
-            /* 关联UI */
-            JE.editUI = $("json_eidit");
-            JE.msgUI = $("json_editInfo");
-            JE.treeUI = $("tree");
-            var updateUI = $("update");
-            var auto = $("autoUpdate");
-            var fontSize = $("fontSize");
-            /* 单击树子项 */
-            JE.onclick = function(item) {
-                    var key = '键名: <input value="' + item.getAttribute('key') + '" />',
-                        val = ' 键值: ' + (item.getAttribute('val') == '' ? '成员列表' : '<input value="' + item.getAttribute('val') + '" />'),
-                        add = '<button onclick="' + this.name + '.add(this)">新增</button>',
-                        edit = '<button onclick="' + this.name + '.editItem(this)">修改</button>';
-                    JE.msg(key + val + add + edit, 'info');
-                }
-                /* 监听代码变化事件 */
-            JE.editUI.oninput = JE.editUI.onpropertychange = function() {
-                if (JE.formating) return; /* 格式化不刷新树 */
-                if (/^\s*$/.test(this.value)) return JE.msg('请输入JSON格式的代码!');;
-                clearTimeout(JE.update);
+            /* 监听代码变化事件 */
+            JE.initTree = function(data) {
+                // if (JE.formating) return; /* 格式化不刷新树 */
+                if (/^\s*$/.test(data)) return JE.msg('请输入JSON格式的代码!');
                 try {
-                    JE.data = eval('(' + this.value + ')');
+                    JE.data = eval('(' + data + ')');
                 } catch (e) {
                     JE.editUI.style.color = 'red';
                     return JE.msg("源代码有错误: " + e.description + ' , 如果正在编辑中, 请忽略此消息!', 'err');
                 };
-                JE.editUI.style.color = '#000';
-                if (auto.checked || JE.firstUp) { /*若同步*/
-                    JE.msg('语法正确,正在重新构造树,请稍候...', 'busy');
-                    JE.update = setTimeout(function() {
-                        JE.toTree();
-                    }, 450);
-                } else {
-                    JE.msg('语法正确,请点击刷新,或者打开视图同步开关,或者继续编辑!')
-                }
+                // JE.editUI.style.color = '#000';
+                JE.msg('语法正确,正在重新构造树,请稍候...', 'busy');
+                JE.toTree();
+                JE.msg('语法正确,请点击刷新,或者打开视图同步开关,或者继续编辑!')
+                    // }
                 return true;
             };
             if (window.ActiveXObject)
                 document.execCommand("BackgroundImageCache", false, true);
-            /* 拦截Tab,自动格式化 */
-            JE.editUI.onkeydown = function() {
-                    if (event.keyCode == 9) {
-                        $('format_indent').onclick();
-                        event.returnValue = false;
-                    };
-                    JE.code = this.value;
-                }
-                /* 格式化 */
-            var format = function(compress) {
-                    var code = JE.format(JE.editUI.value, compress);
-                    JE.formating = true;
-                    if (code) JE.editUI.value = code;
-                    JE.editUI.focus();
-                    setTimeout(function() {
-                        JE.formating = false;
-                    }, 1000);
-                    return code;
-                }
-                /* 工具栏按钮 */
-            $('format_indent').onclick = function() {
-                if (format()) JE.msg('完成缩进风格转换,' + JE.countInfo)
-            }
-            $('format_compress').onclick = function() {
-                if (format(true) != undefined) JE.msg('完成紧凑风格转换,' + JE.countInfo);
-            }
-            updateUI.onclick = function() {
-                JE.firstUp = true;
-                JE.editUI.onpropertychange() ? JE.msg('成功刷新视图!') : JE.msg('数据有误,刷新失败!', 'err')
-                JE.firstUp = false;
-            };
-            $('clear_txt').onclick = function() {
-                JE.editUI.value = JE.treeUI.innerHTML = '';
-                JE.editUI.focus();
-            }
-            auto.onclick = function() {
-                JE.msg('自动同步视图功能' + (this.checked ? '开启' : '关闭!'));
-            };
-            /* 另存为 */
-            // if ( /*@cc_on !@*/ true) {
-            //     $('save_as').style.display = 'none'
-            // };
-            $('save_as').onclick = function() {
-                var d = document,
-                    w = d.createElement('IFRAME');
-                w.style.display = "none";
-                d.body.appendChild(w);
-                setTimeout(function() {
-                    var g = w.contentWindow.document;
-                    g.charset = 'utf-8';
-                    g.body.innerHTML = JE.editUI.value;
-                    g.execCommand("saveas", '', "json.txt");
-                }, 1);
-            }
+            JE.initTree(data);
         };
-        /* 从这里开始 */
-        window.onload = function() {
-                JE.begin();
-            }
-            // -->
     </script>
 </body>
 
