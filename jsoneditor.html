@@ -125,6 +125,7 @@
             /* font-size: 0; */
         }
     </style>
+    <script src="jsonlint/jsonlint.js"></script>
 </head>
 
 <body>
@@ -192,6 +193,15 @@
 
             function getTreeContent() {
                 var treeText = document.getElementById("tree").innerText;
+                try {
+                    var result = jsonlint.parse(treeText);
+                    if (result) {
+
+                    }
+                } catch (e) {
+                    alert(e);
+
+                }
                 if (/^\s*$/.test(treeText)) return JE.msg('请输入JSON格式的代码!');
                 try {
                     /*去除空格和换行符号*/
@@ -202,6 +212,7 @@
                     return JE.msg("源代码有错误: " + e.description + ' , 如果正在编辑中, 请忽略此消息!', 'err');
                 };
                 return true;
+
             }
             saveJson.onclick = function() {
                 if (getTreeContent()) {
