@@ -88,6 +88,7 @@ function closeObject() {
 }
 /*上传JSON格式的文件*/
 function submitJsonFile() { //提交
+    JE.number = 0;
     var objFile = document.getElementById("fileId");
     var data = null;
     var files = objFile.files; //获取到文件列表
@@ -102,6 +103,10 @@ function submitJsonFile() { //提交
                 JE.data = JSON.parse(formatStr(data));
                 JE.toTree();
             } catch (e) {
+                var reg = /("([^\\\"]*(\\.)?)*")|('([^\\\']*(\\.)?)*')|(\/{2,}.*?(\r|\n))|(\/\*(\n|.)*?\*\/)/g;
+                data = data.replace(reg, function(word) {
+                    return /^\/{2,}/.test(word) || /^\/\*/.test(word) ? "" : word;
+                });
                 jsonIntStr(data);
             };
 
@@ -259,6 +264,7 @@ JE.begin = function(data) { /* 设置UI控件关联响应 */
     var selectMethod = $("selectMethod");
     var clearTree = $("clear_txt");
     var formatTree = $("formatTree");
+    var fileIpt = $("fileId");
 
     saveJson.onclick = function() {
         var span = document.getElementsByTagName("span");
@@ -299,6 +305,11 @@ JE.begin = function(data) { /* 设置UI控件关联响应 */
         initClopick();
     }
     selectMethod.onchange = function() {
+        JE.number = 0;
         formatJson();
+    }
+    fileIpt.onchange = function() {
+        var topInput = document.getElementById("topInput");
+        topInput.value = this.value;
     }
 }
