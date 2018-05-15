@@ -1,0 +1,126 @@
+body {
+    margin: 0;
+    padding: 0;
+}
+
+#header {
+    background-color: #3883fa;
+}
+
+span {
+    position: absolute;
+    left: -20px;
+    color: #999;
+    font-size: 12px;
+    padding-top: 4px;
+}
+
+b,
+strong {
+    font-weight: normal;
+}
+
+cite,
+em {
+    font-style: normal;
+}
+
+#header ul {
+    margin: 0 20px;
+    height: 48px;
+}
+
+#tree {
+    margin: 0 40px;
+}
+
+ul li {
+    float: left;
+    list-style: none;
+    height: 48px;
+    line-height: 48px;
+}
+
+ul li:first-child {
+    margin-right: 300px;
+}
+
+ul li:first-child button {
+    margin-left: 20px;
+}
+
+ul li button,
+select {
+    cursor: pointer;
+    border-radius: 4px;
+    margin-right: 20px;
+    padding: 0 10px;
+    color: #999;
+}
+
+#tree {
+    padding-left: 20px;
+    position: relative;
+    outline: none;
+}
+
+i {
+    cursor: pointer;
+    display: inline-block;
+    width: 0px;
+    height: 0px;
+    border-style: solid;
+    border-width: 4px;
+}
+
+.triangle_border_right {
+    border-color: transparent transparent transparent #333;
+}
+
+.triangle_border_down {
+    border-color: #333 transparent transparent transparent;
+}
+
+.boolean {
+    color: #ff0000;
+}
+
+.bracket {
+    color: grey;
+}
+
+.number {
+    color: green;
+}
+
+.string {
+    color: #ff8c00
+}
+
+button,
+input {
+    cursor: pointer;
+    border: none;
+    outline: none;
+    background-color: white;
+    widows: 21px;
+    height: 21px;
+    padding: 0px;
+    vertical-align: middle;
+}
+
+dl {
+    margin: 4px;
+}
+
+dd {
+    margin-left: 20px;
+}
+
+dt {
+    /* font-size: 0; */
+}
+
+.colpick_submit {
+    display: none;
+}
