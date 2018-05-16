@@ -17,7 +17,7 @@
                 <label for="file">Upload a JSON file ：</label>
                 <input type="file" name="file" id="fileId" />
                 <input type="text" id="topInput">
-                <button type="submit" name="btn" value="提交" id="btnId" onclick="submitJsonFile()" onpaste="pasteEve()"/> Upload</button>
+                <button type="submit" name="btn" value="提交" id="btnId" onclick="submitJsonFile()" onpaste="pasteEve()" /> Upload</button>
             </li>
             <li>
                 <select name="" id="selectMethod">
@@ -30,7 +30,10 @@
             <li id="save_as"><button>Save</button></li>
         </ul>
     </div>
-    <div class="treeWrap"><div id="tree" contenteditable="plaintext-only"></div></div>
+    <div class="treeWrap">
+        <div id="tree" contenteditable="true"></div>
+    </div>
+    <textarea name="" id="pasteTextarea" cols="" rows="" style="display: none"></textarea>
     <div style="display:none" id="divTemp"></div>
     <script src="js/jquery.min.js"></script>
     <script src="js/colpick.js"></script>
