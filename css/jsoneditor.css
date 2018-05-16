@@ -12,9 +12,22 @@ label {
     background-color: #3883fa;
 }
 
+.treeWrap{
+    position: relative;
+}
+#tree {
+    overflow: hidden;
+    margin: 0 60px;
+    padding-left: 20px;
+    outline: none;
+}
+
 span {
+    -webkit-user-select:none;
+    -moz-user-select:none;
+    -ms-user-select:none;
     position: absolute;
-    left: -20px;
+    left: 30px;
     color: #999;
     font-size: 12px;
     padding-top: 4px;
@@ -35,9 +48,6 @@ em {
     height: 48px;
 }
 
-#tree {
-    margin: 0 40px;
-}
 
 ul li {
     float: left;
@@ -52,7 +62,7 @@ ul li:first-child {
 }
 
 ul li:first-child button {
-    margin-left: 200px;
+    margin-left: 270px;
     margin-bottom: 3px;
     background-color: mediumvioletred;
     color: white;
@@ -71,12 +81,6 @@ select {
 
 li select {
     height: 26px;
-}
-
-#tree {
-    padding-left: 20px;
-    position: relative;
-    outline: none;
 }
 
 i {
@@ -143,11 +147,11 @@ dd {
     top: 12px;
     z-index: 3;
     height: 24px;
-    width: 200px;
+    width: 270px;
 }
 
 #topInput {
-    width: 200px;
+    width: 270px;
     position: absolute;
     top: 11px;
 }
