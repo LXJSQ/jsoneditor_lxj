@@ -1,15 +1,7 @@
 window.onload = function() {
         JE.begin();
     }
-    /*获取页面json格式区域字符串内容，并去标签，去空格，去换行符*/
-    /*找出JSON格式错误出现在哪行*/
 function jsonIntStr(str) {
-    // var treeText = document.getElementById("tree").innerText;
-    // if (/^\s*$/.test(treeText)) {
-    //     alert('所需格式化内容为空，请输入或上传JSON格式的文件!');
-    //     return false;
-    // }
-    // else
     try {
         var result = jsonlint.parse(str);
         if (result) return result;
@@ -39,11 +31,6 @@ function checkJsonStr(str) {
 
 /*选择代码格式化JSON或树形格式化JSON*/
 function formatJson() {
-    var codeText = document.getElementById("tree").innerText;
-    if (codeText.length == 0) {
-        alert("所需格式化内容为空，请输入或上传JSON格式的文件!");
-        return;
-    }
     if (selectMethod.value == 0) {
         var str = JSON.stringify(JE.data, undefined, 4);
         JE.treeUI.innerHTML = "<pre>" + str + "</pre>";
@@ -51,6 +38,7 @@ function formatJson() {
         try {
             JE.data = JSON.parse(formatStr(codeText));
             JE.toTree();
+            initClopick();
         } catch (e) {
             jsonIntStr(codeText);
         };
@@ -60,32 +48,58 @@ function formatJson() {
 /*改变对象或者数组的展开闭合状态 */
 function closeObject() {
     var dl = document.getElementById(event.target.id.split("_")[0] + "_dl");
-    var i = document.getElementById(event.target.id.split("_")[0] + "_i")
-    var eData = i.getAttribute("data")
+    var i = document.getElementById(event.target.id.split("_")[0] + "_i");
+    var eData = i.getAttribute("data");
     if (eData.split("_")[1] == "1") {
-        i.setAttribute("data", eData.split("_")[0] + "_0");
-        var firstChild = dl.childNodes[0].childNodes;
-        for (let i = 0; i < firstChild.length; i++) {
-            if (firstChild[i].nodeName == "EM") {
-                firstChild[i].innerText.indexOf("[") > -1 ? firstChild[i].innerText = "[...]" : firstChild[i].innerText = "{...}"
-            }
-        }
-        dl.childNodes[1].style.display = "none";
-        dl.childNodes[2].style.display = "none";
-        i.setAttribute("class", "triangle_border_right");
+        var showI=eData.split("_")[0]+"_0";
+        showOrClose(dl,i,showI,"[...],{...}","none","triangle_border_right");
     } else {
-        i.setAttribute("data", eData.split("_")[0] + "_1");
-        var firstChild = dl.childNodes[0].childNodes;
-        for (let i = 0; i < firstChild.length; i++) {
-            if (firstChild[i].nodeName == "EM") {
-                firstChild[i].innerText.indexOf("[") > -1 ? firstChild[i].innerText = "[" : firstChild[i].innerText = "{"
-            }
-        }
-        dl.childNodes[1].style.display = "block";
-        dl.childNodes[2].style.display = "block";
-        i.setAttribute("class", "triangle_border_down");
+        var closeI=eData.split("_")[0]+"_1";
+        showOrClose(dl,i,closeI,"[,{","block","triangle_border_down");
     }
 }
+
+function showOrClose(dl,ele,data,bracket,display,iClass){
+    ele.setAttribute("data",data);
+    var firstChild = dl.childNodes[0].childNodes;
+    for (let i = 0; i < firstChild.length; i++) {
+        if (firstChild[i].nodeName == "EM") {
+            firstChild[i].innerText.indexOf("[") > -1 
+            ? firstChild[i].innerText = bracket.split(",")[0] 
+            : firstChild[i].innerText =bracket.split(",")[1];
+        }
+    }
+    dl.childNodes[1].style.display = display;
+    dl.childNodes[2].style.display = display;
+    ele.setAttribute("class", iClass);
+}
+
+/*格式化时默认展开对象 */
+function showObject(){
+    var dd=document.getElementsByTagName("dd");
+    var dt=document.getElementsByTagName("dt");
+    var iEle = document.getElementsByTagName("i");
+    var em=document.getElementsByTagName("em");
+    for(let i=0;i<dd.length;i++){
+        dd[i].style.display="block";
+        dt[i].style.display="block";
+    }
+    for(let k=0;k<em.length;k++){
+        if(em[k].innerText.indexOf("[...]") > -1) {
+            em[k].innerText = "[";
+        }
+        else if(em[k].innerText.indexOf("{...}") > -1)
+        {
+            em[k].innerText = "{";
+        }
+    }
+    for(let j=0;j<iEle.length;j++){
+        iEle[j].setAttribute("data",iEle[j].getAttribute("data").split("_")[0]+"_1");
+        iEle[j].setAttribute("class","triangle_border_down");
+    }
+}
+
+
 /*上传JSON格式的文件*/
 function submitJsonFile() { //提交
     JE.number = 0;
@@ -102,6 +116,7 @@ function submitJsonFile() { //提交
             try {
                 JE.data = JSON.parse(formatStr(data));
                 JE.toTree();
+                initClopick();
             } catch (e) {
                 var reg = /("([^\\\"]*(\\.)?)*")|('([^\\\']*(\\.)?)*')|(\/{2,}.*?(\r|\n))|(\/\*(\n|.)*?\*\/)/g;
                 data = data.replace(reg, function(word) {
@@ -113,7 +128,6 @@ function submitJsonFile() { //提交
         }
         selectMethod.value = "1";
     }
-    initClopick();
 }
 /*给颜色字符串初始化clopick取色器*/
 function initClopick() {
@@ -121,40 +135,52 @@ function initClopick() {
     for (var i = 0; i < bEle.length; i++) {
         var bEleText = bEle[i].innerHTML;
         bEleText = formatStr(bEleText);
-        if (bEleText) {
-            bEleText = bEleText.indexOf(",") > -1 ? bEleText.split(",")[0] : bEleText;
-            bEleText = bEleText.substr(1, bEleText.length - 2);
-        } else {
-            continue;
-        }
-        if (CheckIsColor(bEleText)) {
+        eText = bEleText.substr(bEleText.length-1,1)==','?bEleText.substr(1, bEleText.length - 3):bEleText.substr(1, bEleText.length - 2);
+        if (CheckIsColor(eText)) {
             var ele = $(bEle[i]);
             ele.colpick({
                 layout: "rgbhex",
-                submitText: "",
-                onBeforeShow: function(color1, color2) {
-                    console.log(color1, color2);
-                },
-                onChange: function(col1, col2) {
-                    ele.html('"#' + col2 + '"');
-                },
-                colorScheme: "light"
+                submitText: "ok",
+                colorScheme: "light",
+                onSubmit:function(hsb,hex,rgb,el) {
+                    submitColor(hex,rgb,el);
+                    $(el).colpickHide();
+                }
             });
         }
     }
 }
+/*确认取色器所选颜色*/
+function submitColor(hex,rgb,el){
+    var val=$(el).html();
+    if(val.match(/[rR][gG][Bb]/))
+    {
+        var tempArr=val.split(",");
+        var transparence=tempArr[tempArr.length-2].split(")")[0];
+        val.substr(val.length-1,val.length)==","
+        ?$(el).html("\"rgba("+rgb.r+","+rgb.g+","+rgb.b+","+transparence+")\",")
+        :$(el).html("\"rgba("+rgb.r+","+rgb.g+","+rgb.b+","+transparence+")\"")
+    }
+    else{
+        val.substr(val.length-1,val.length)==","
+        ? $(el).html("\"#"+hex+"\",")
+        : $(el).html("\"#"+hex+"\"");
+    }
+}
+
 /*校验字符串是不是颜色值*/
 function CheckIsColor(colorValue) {
     if (colorValue.match(/^#[0-9a-fA-F]{6}$/) == null) {
-        type = "^[rR][gG][Bb][]([s]∗(2[0−4][0−9]|25[0−5]|[01]?[0−9][0−9]?)[s]∗,)2[s]∗(2[0−4]d|25[0−5]|[01]?dd?)[s]∗[]{1}$";
+        type="^[rR][gG][Bb]";
+        //匹配rgb和rgba的颜色
         re = new RegExp(type);
         if (colorValue.match(re) == null) {
-            return false;
+            return 0;
         } else {
-            return true;
+            return 2;/*rgb颜色*/
         }
     } else {
-        return true;
+        return 1;/*十六进制颜色值*/
     }
 }
 /*去字符串空格，换行符等制表符以及注释*/
@@ -249,8 +275,8 @@ JE = {
             case "object":
                 return '<span>' + this.number + '</span>\
                 <button onclick="closeObject()" id="' + (this.number - 1) + '_btn">\
-                <i class="triangle_border_down" id="' + (this.number - 1) + '_i" data="' + (this.number - 1) + '_1"></i></button>\
-                <b class="string">' + nameStr + '</b><em class ="bracket">' + bracket + '</em>';
+                <i class="triangle_border_down" id="' + (this.number - 1) + '_i" data="' + (this.number - 1) + '_1">\
+                </i></button><b class="string">' + nameStr + '</b><em class ="bracket">' + bracket + '</em>';
         }
     },
 
@@ -293,19 +319,30 @@ JE.begin = function(data) { /* 设置UI控件关联响应 */
         JE.treeUI.innerHTML = "";
     }
     formatTree.onclick = function() {
+        var codeText = document.getElementById("tree").innerText;
+        if (codeText.length == 0) {
+            alert("所需格式化内容为空，请输入或上传JSON格式的文件!");
+            return;
+        }
         JE.number = 0;
+        showObject();
         var span = document.getElementsByTagName("span");
-        for (var i = 0; i < span.length; i++) {
+        for (let i = 0; i < span.length; i++) {
             span[i].style.display = "none";
         }
         formatJson();
-        for (var i = 0; i < span.length; i++) {
+        for (let i = 0; i < span.length; i++) {
             span[i].style.display = "inline-block";
         }
-        initClopick();
     }
     selectMethod.onchange = function() {
+        var codeText = document.getElementById("tree").innerText;
+        if (codeText.length == 0) {
+            alert("所需格式化内容为空，请输入或上传JSON格式的文件!");
+            return;
+        }
         JE.number = 0;
+        showObject();
         formatJson();
     }
     fileIpt.onchange = function() {

@@ -111,7 +111,9 @@ i {
 .string {
     color: #ff8c00
 }
-
+dl button{
+    outline: none;
+}
 button,
 input {
     cursor: pointer;
@@ -131,9 +133,9 @@ dd {
     margin-left: 20px;
 }
 
-.colpick_submit {
+/* .colpick_submit {
     display: none;
-}
+} */
 
 #fileId {
     opacity: 0;
@@ -147,5 +149,5 @@ dd {
 #topInput {
     width: 200px;
     position: absolute;
-    top: 12px;
+    top: 11px;
 }
