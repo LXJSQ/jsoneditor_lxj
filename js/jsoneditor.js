@@ -20,7 +20,8 @@ JE = {
                     }
                     var bracket = bool ? "]" : "],"
                     This.number++;
-                    draw.push('<span oncopy="return false" contenteditable="false">' + This.number + '<span></dd><dt><em class="bracket">' + bracket + '</em></dt></dl>');
+                    draw.push('<span oncopy="return false" contenteditable="false">' + This.number +
+                        '<span></dd><dt><em class="bracket">' + bracket + '</em></dt></dl>');
                 } else if (value && typeof value == 'object') {
                     /* processing object node */
                     draw.push('<dl id="' + This.number + '_dl"><dt>', This.draw(name, value), ' </dt><dd>');
@@ -36,7 +37,8 @@ JE = {
                     }
                     var bracket = bool ? "}" : "},"
                     This.number++;
-                    draw.push('<span oncopy="return false" contenteditable="false">' + This.number + '<span></dd><dt><em class="bracket">' + bracket + '</em></dt></dl>');
+                    draw.push('<span oncopy="return false" contenteditable="false">' + This.number +
+                        '<span></dd><dt><em class="bracket">' + bracket + '</em></dt></dl>');
                 } else {
                     /* processing leaf nodes (drawing file) */
                     draw.push('<dl><dt>', This.draw(name, value, bool), '</dt></dl>');
@@ -55,31 +57,38 @@ JE = {
                 else
                     return this.highlight("</b>", value, "{", bool);
             } else if (typeof name == "string") {
-                if (value && value.constructor == Array)
-                    return this.highlight('"' + name + '"</b><code class="bracket"> : </code>', value, "[", bool);
-                else
+                if (value && value.constructor == Array) {
+                    let nameStr = '"' + name + '"</b><code class="bracket"> : </code>';
+                    return this.highlight(nameStr, value, "[", bool);
+                } else {
+                    let nameStr = '"' + name + '"</b><code class="bracket"> : </code>'
                     return name.length > 0 ?
-                        this.highlight('"' + name + '"</b><code class="bracket"> : </code>', value, "{", bool) :
+                        this.highlight(nameStr, value, "{", bool) :
                         this.highlight('', value, "{", bool);
+                }
+
             }
         },
+        /*Highlight different data types.*/
         highlight: function(nameStr, value, bracket, bool /*is it the last item*/ ) {
             this.number++;
             if (typeof value != "string")
                 var valueStr = bool ? value : value + ",";
             switch (typeof value) {
                 case "boolean":
-                    return '<span  onselectstart="return false;" contenteditable="false">' + this.number + '</span><b  class="string">' + nameStr + ' <strong class="boolean">' + valueStr + '</strong>'
+                    return '<span  onselectstart="return false;" contenteditable="false">' + this.number + '</span>\
+                    <b  class="string">' + nameStr + ' <strong class="boolean">' + valueStr + '</strong>'
                     break;
                 case "number":
-                    return '<span  onselectstart="return false;" contenteditable="false">' + this.number + '</span><b  class="string">' + nameStr + ' <cite class="number">' + valueStr + '</cite>'
+                    return '<span  onselectstart="return false;" contenteditable="false">' + this.number + '</span>\
+                    <b  class="string">' + nameStr + ' <cite class="number">' + valueStr + '</cite>'
                     break;
                 case "string":
                     {
-                        if (bool) return '<span  onselectstart="return false;" contenteditable="false">' + this.number + '</span><b  class="string">' + nameStr +
-                            '<b class ="string">"' + value + '"</b>';
-                        else return '<span  onselectstart="return false;" contenteditable="false">' + this.number + '</span><b  class="string">' + nameStr +
-                            '<b class ="string">"' + value + '" ,</b>';
+                        if (bool) return '<span  onselectstart="return false;" contenteditable="false">' + this.number +
+                            '</span><b  class="string">' + nameStr + '<b class ="string">"' + value + '"</b>';
+                        else return '<span  onselectstart="return false;" contenteditable="false">' + this.number +
+                            '</span><b  class="string">' + nameStr + '<b class ="string">"' + value + '" ,</b>';
                         break;
                     }
                 case "object":
@@ -89,6 +98,133 @@ JE = {
                     </i></button><b class="string">' + nameStr + '</b><em class ="bracket">' + bracket + '</em>';
             }
         },
+        /*The default deployable object when formatted.*/
+        showObject: function() {
+            var dd = document.getElementsByTagName("dd");
+            var dt = document.getElementsByTagName("dt");
+            var iEle = document.getElementsByTagName("i");
+            var em = document.getElementsByTagName("em");
+            for (let i = 0; i < dd.length; i++) {
+                dd[i].style.display = "block";
+                dt[i].style.display = "block";
+            }
+            for (let k = 0; k < em.length; k++) {
+                if (em[k].innerText.indexOf("[...]") > -1) {
+                    em[k].innerText = "[";
+                } else if (em[k].innerText.indexOf("{...}") > -1) {
+                    em[k].innerText = "{";
+                }
+            }
+            for (let j = 0; j < iEle.length; j++) {
+                iEle[j].setAttribute("data", iEle[j].getAttribute("data").split("_")[0] + "_1");
+                iEle[j].setAttribute("class", "triangle_border_down");
+            }
+        },
+        /* color string to initialize clopick color */
+        initClopick: function() {
+            var bEle = document.getElementsByTagName("b");
+            for (var i = 0; i < bEle.length; i++) {
+                var bEleText = bEle[i].innerHTML;
+                bEleText = this.formatStr(bEleText);
+                eText = bEleText.substr(bEleText.length - 1, 1) == ',' ?
+                    bEleText.substr(1, bEleText.length - 3) :
+                    bEleText.substr(1, bEleText.length - 2);
+                if (this.CheckIsColor(eText)) {
+                    var ele = $(bEle[i]);
+                    ele.colpick({
+                        layout: "rgbhex",
+                        submitText: "ok",
+                        colorScheme: "light",
+                        onSubmit: function(hsb, hex, rgb, el) {
+                            JE.submitColor(hex, rgb, el);
+                            $(el).colpickHide();
+                        }
+                    });
+                }
+            }
+        },
+        /* confirm the color selected by the colorer */
+        submitColor: function(hex, rgb, el) {
+            var val = $(el).html();
+            if (val.match(/[rR][gG][Bb]/)) {
+                var tempArr = val.split(",");
+                var transparence = tempArr[tempArr.length - 2].split(")")[0];
+                val.substr(val.length - 1, val.length) == "," ?
+                    $(el).html("\"rgba(" + rgb.r + "," + rgb.g + "," + rgb.b + "," + transparence + ")\",") :
+                    $(el).html("\"rgba(" + rgb.r + "," + rgb.g + "," + rgb.b + "," + transparence + ")\"")
+            } else {
+                val.substr(val.length - 1, val.length) == "," ?
+                    $(el).html("\"#" + hex + "\",") :
+                    $(el).html("\"#" + hex + "\"");
+            }
+        },
+
+        /*Check if string color values */
+        CheckIsColor: function(colorValue) {
+            if (colorValue.match(/^#[0-9a-fA-F]{6}$/) == null) {
+                type = "^[rR][gG][Bb]";
+                /*color matching RGB and rgba. */
+                re = new RegExp(type);
+                if (colorValue.match(re) == null) {
+                    return 0;
+                } else {
+                    return 2; /*return 2 is RGB color */
+                }
+            } else {
+                return 1; /*return 1 is hexadecimal color value */
+            }
+        },
+        /* go to string Spaces, line breaks and other tabs and comment */
+        formatStr: function(str) {
+            var reg = /("([^\\\"]*(\\.)?)*")|('([^\\\']*(\\.)?)*')|(\/{2,}.*?(\r|\n))|(\/\*(\n|.)*?\*\/)/g;
+            str = str.replace(reg, function(word) {
+                return /^\/{2,}/.test(word) || /^\/\*/.test(word) ? "" : word;
+            });
+            return str = str.replace(/\ +/g, '').replace(/[\r\n]/g, '').replace(/\s|\xA0/g, "");
+        },
+        /* check that line is not in json format */
+        jsonIntStr: function(str) {
+            try {
+                var result = jsonlint.parse(str);
+                if (result) return result;
+            } catch (e) {
+                alert(e);
+                return false;
+            }
+        },
+        /*Select the code to format JSON or tree format JSON.*/
+        formatJson: function() {
+            var codeText = document.getElementById("tree").innerText;
+            if (codeText.length == 0) {
+                alert("The required formatting content is empty, please enter or upload the JSON formatted file!");
+                return;
+            }
+            JE.number = 0;
+            var span = document.getElementsByTagName("span");
+            if (span) {
+                for (let i = 0; i < span.length; i++) span[i].style.display = "none";
+            }
+            codeText = document.getElementById("tree").innerText;
+            try {
+                JE.data = JSON.parse(this.formatStr(codeText));
+                if (selectMethod.value == 0) {
+                    var str = JSON.stringify(JE.data, undefined, 4);
+                    JE.treeUI.innerHTML = "<pre>" + str + "</pre>";
+                } else {
+                    JE.toTree();
+                    this.showObject();
+                    this.initClopick();
+                    for (let i = 0; i < span.length; i++) {
+                        span[i].style.display = "inline-block";
+                    }
+                }
+            } catch (e) {
+                this.jsonIntStr(codeText);
+                for (let i = 0; i < span.length; i++) {
+                    span[i].style.display = "inline-block";
+                }
+            };
+        }
 
     }
     /*Initialize formatted upload download and other events.  */
@@ -102,7 +238,36 @@ JE.begin = function(data) {
         var clearTree = $("clear_txt");
         var formatTree = $("formatTree");
         var fileIpt = $("fileId");
+        var upload = $("uploadBtn");
+        /* upload the file in JSON format */
+        upload.onclick = function() {
+            JE.number = 0;
+            var objFile = document.getElementById("fileId");
+            var data = null;
+            var files = objFile.files; /*get the list of files.*/
+            if (files.length == 0) {
+                alert('Please select the JSON format file.');
+            } else {
+                var reader = new FileReader(); /* create a new FileReader.*/
+                reader.readAsText(files[0], "UTF-8"); /* read the file*/
+                reader.onload = function(evt) { /* it will come back here after reading the file.*/
+                    data = evt.target.result; /* read the file contents.*/
+                    try {
+                        JE.data = JSON.parse(JE.formatStr(data));
+                        JE.toTree();
+                        initClopick();
+                    } catch (e) {
+                        var reg = /("([^\\\"]*(\\.)?)*")|('([^\\\']*(\\.)?)*')|(\/{2,}.*?(\r|\n))|(\/\*(\n|.)*?\*\/)/g;
+                        data = data.replace(reg, function(word) {
+                            return /^\/{2,}/.test(word) || /^\/\*/.test(word) ? "" : word;
+                        });
+                        JE.jsonIntStr(data);
+                    };
 
+                }
+                selectMethod.value = "1";
+            }
+        }
         saveJson.onclick = function() {
             var span = document.getElementsByTagName("span");
             if (span) {
@@ -114,9 +279,9 @@ JE.begin = function(data) {
                 return;
             }
             try {
-                JE.data = JSON.parse(formatStr(codeText));
+                JE.data = JSON.parse(JE.formatStr(codeText));
             } catch (e) {
-                jsonIntStr(codeText);
+                JE.jsonIntStr(codeText);
                 return;
             };
             var datastr = "data:json;charset=utf-8," + encodeURIComponent(JSON.stringify(JE.data, undefined, 4));
@@ -130,61 +295,18 @@ JE.begin = function(data) {
             JE.treeUI.innerHTML = "";
         }
         formatTree.onclick = function() {
-            formatJson();
+            JE.formatJson();
 
         }
         selectMethod.onchange = function() {
-            formatJson();
+            JE.formatJson();
         }
         fileIpt.onchange = function() {
             var topInput = document.getElementById("topInput");
             topInput.value = this.value;
         }
     }
-    /* check that line is not in json format */
-function jsonIntStr(str) {
-    try {
-        var result = jsonlint.parse(str);
-        if (result) return result;
-    } catch (e) {
-        alert(e);
-        return false;
-    }
-}
-/*Select the code to format JSON or tree format JSON.*/
-function formatJson() {
-    var codeText = document.getElementById("tree").innerText;
-    if (codeText.length == 0) {
-        alert("The required formatting content is empty, please enter or upload the JSON formatted file!");
-        return;
-    }
-    JE.number = 0;
-    var span = document.getElementsByTagName("span");
-    if (span) {
-        for (let i = 0; i < span.length; i++) span[i].style.display = "none";
-    }
-    codeText = document.getElementById("tree").innerText;
-    try {
-        JE.data = JSON.parse(formatStr(codeText));
-        if (selectMethod.value == 0) {
-            var str = JSON.stringify(JE.data, undefined, 4);
-            JE.treeUI.innerHTML = "<pre>" + str + "</pre>";
-        } else {
-            JE.toTree();
-            showObject();
-            initClopick();
-            for (let i = 0; i < span.length; i++) {
-                span[i].style.display = "inline-block";
-            }
-        }
-    } catch (e) {
-        jsonIntStr(codeText);
-        for (let i = 0; i < span.length; i++) {
-            span[i].style.display = "inline-block";
-        }
-    };
-}
-/*Changes the open state of an object or array.*/
+    /*Changes the open state of an object or array.*/
 function closeObject() {
     var dl = document.getElementById(event.target.id.split("_")[0] + "_dl");
     var i = document.getElementById(event.target.id.split("_")[0] + "_i");
@@ -212,125 +334,8 @@ function showOrClose(dl, ele, data, bracket, display, iClass) {
     dl.childNodes[2].style.display = display;
     ele.setAttribute("class", iClass);
 }
-
-/*The default deployable object when formatted.*/
-function showObject() {
-    var dd = document.getElementsByTagName("dd");
-    var dt = document.getElementsByTagName("dt");
-    var iEle = document.getElementsByTagName("i");
-    var em = document.getElementsByTagName("em");
-    for (let i = 0; i < dd.length; i++) {
-        dd[i].style.display = "block";
-        dt[i].style.display = "block";
-    }
-    for (let k = 0; k < em.length; k++) {
-        if (em[k].innerText.indexOf("[...]") > -1) {
-            em[k].innerText = "[";
-        } else if (em[k].innerText.indexOf("{...}") > -1) {
-            em[k].innerText = "{";
-        }
-    }
-    for (let j = 0; j < iEle.length; j++) {
-        iEle[j].setAttribute("data", iEle[j].getAttribute("data").split("_")[0] + "_1");
-        iEle[j].setAttribute("class", "triangle_border_down");
-    }
-}
-
-/* upload the file in JSON format */
-function submitJsonFile() {
-    JE.number = 0;
-    var objFile = document.getElementById("fileId");
-    var data = null;
-    var files = objFile.files; /*get the list of files.*/
-    if (files.length == 0) {
-        alert('Please select the JSON format file.');
-    } else {
-
-        var reader = new FileReader(); /* create a new FileReader.*/
-        reader.readAsText(files[0], "UTF-8"); /* read the file*/
-        reader.onload = function(evt) { /* it will come back here after reading the file.*/
-            data = evt.target.result; /* read the file contents.*/
-            try {
-                JE.data = JSON.parse(formatStr(data));
-                JE.toTree();
-                initClopick();
-            } catch (e) {
-                var reg = /("([^\\\"]*(\\.)?)*")|('([^\\\']*(\\.)?)*')|(\/{2,}.*?(\r|\n))|(\/\*(\n|.)*?\*\/)/g;
-                data = data.replace(reg, function(word) {
-                    return /^\/{2,}/.test(word) || /^\/\*/.test(word) ? "" : word;
-                });
-                jsonIntStr(data);
-            };
-
-        }
-        selectMethod.value = "1";
-    }
-}
-/* color string to initialize clopick color */
-function initClopick() {
-    var bEle = document.getElementsByTagName("b");
-    for (var i = 0; i < bEle.length; i++) {
-        var bEleText = bEle[i].innerHTML;
-        bEleText = formatStr(bEleText);
-        eText = bEleText.substr(bEleText.length - 1, 1) == ',' ?
-            bEleText.substr(1, bEleText.length - 3) :
-            bEleText.substr(1, bEleText.length - 2);
-        if (CheckIsColor(eText)) {
-            var ele = $(bEle[i]);
-            ele.colpick({
-                layout: "rgbhex",
-                submitText: "ok",
-                colorScheme: "light",
-                onSubmit: function(hsb, hex, rgb, el) {
-                    submitColor(hex, rgb, el);
-                    $(el).colpickHide();
-                }
-            });
-        }
-    }
-}
-/* confirm the color selected by the colorer */
-function submitColor(hex, rgb, el) {
-    var val = $(el).html();
-    if (val.match(/[rR][gG][Bb]/)) {
-        var tempArr = val.split(",");
-        var transparence = tempArr[tempArr.length - 2].split(")")[0];
-        val.substr(val.length - 1, val.length) == "," ?
-            $(el).html("\"rgba(" + rgb.r + "," + rgb.g + "," + rgb.b + "," + transparence + ")\",") :
-            $(el).html("\"rgba(" + rgb.r + "," + rgb.g + "," + rgb.b + "," + transparence + ")\"")
-    } else {
-        val.substr(val.length - 1, val.length) == "," ?
-            $(el).html("\"#" + hex + "\",") :
-            $(el).html("\"#" + hex + "\"");
-    }
-}
-
-/*Check if string color values */
-function CheckIsColor(colorValue) {
-    if (colorValue.match(/^#[0-9a-fA-F]{6}$/) == null) {
-        type = "^[rR][gG][Bb]";
-        /*color matching RGB and rgba. */
-        re = new RegExp(type);
-        if (colorValue.match(re) == null) {
-            return 0;
-        } else {
-            return 2; /*return 2 is RGB color */
-        }
-    } else {
-        return 1; /*return 1 is hexadecimal color value */
-    }
-}
-/* go to string Spaces, line breaks and other tabs and comment */
-function formatStr(str) {
-    var reg = /("([^\\\"]*(\\.)?)*")|('([^\\\']*(\\.)?)*')|(\/{2,}.*?(\r|\n))|(\/\*(\n|.)*?\*\/)/g;
-    str = str.replace(reg, function(word) {
-        return /^\/{2,}/.test(word) || /^\/\*/.test(word) ? "" : word;
-    });
-    return str = str.replace(/\ +/g, '').replace(/[\r\n]/g, '').replace(/\s|\xA0/g, "");
-}
-
+/*editable div to implement copy and paste  for plain text.*/
 $('[contenteditable]').each(function() {
-    // 干掉IE http之类地址自动加链接
     try {
         document.execCommand("AutoUrlDetect", false, false);
     } catch (e) {}
@@ -338,7 +343,6 @@ $('[contenteditable]').each(function() {
     $(this).on('paste', function(e) {
         e.preventDefault();
         var text = null;
-
         if (window.clipboardData && clipboardData.setData) {
             // IE
             text = window.clipboardData.getData('text');
@@ -352,7 +356,7 @@ $('[contenteditable]').each(function() {
                 sel = window.getSelection();
                 var range = sel.getRangeAt(0);
 
-                // 创建临时元素，使得TextRange可以移动到正确的位置
+                /*Create temporary elements that allow TextRange to move to the correct location.*/
                 var tempEl = document.createElement("span");
                 tempEl.innerHTML = "&#FEFF;";
                 range.deleteContents();
@@ -365,7 +369,7 @@ $('[contenteditable]').each(function() {
             textRange.collapse(false);
             textRange.select();
         } else {
-            // Chrome之类浏览器
+            /*Other browsers*/
             document.execCommand("insertText", false, text);
         }
     });
