@@ -1,6 +1,7 @@
 body {
     margin: 0;
     padding: 0;
+    background-color: #2b3c4d;
 }
 
 label {
@@ -12,9 +13,10 @@ label {
     background-color: #3883fa;
 }
 
-.treeWrap{
+.treeWrap {
     position: relative;
 }
+
 #tree {
     overflow: hidden;
     margin: 0 60px;
@@ -23,9 +25,9 @@ label {
 }
 
 span {
-    -webkit-user-select:none;
-    -moz-user-select:none;
-    -ms-user-select:none;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
     position: absolute;
     left: 30px;
     color: #999;
@@ -47,7 +49,6 @@ em {
     margin: 0 20px;
     height: 48px;
 }
-
 
 ul li {
     float: left;
@@ -93,31 +94,42 @@ i {
 }
 
 .triangle_border_right {
-    border-color: transparent transparent transparent #333;
+    border-color: transparent transparent transparent #fff;
 }
 
 .triangle_border_down {
-    border-color: #333 transparent transparent transparent;
+    border-color: #fff transparent transparent transparent;
 }
 
 .boolean {
     color: #ff0000;
+    margin: 0 4px;
 }
 
 .bracket {
-    color: grey;
+    color: white;
 }
 
 .number {
     color: green;
+    margin: 0 4px;
+}
+
+.key {
+    color: #75e9ff;
+    margin: 0 4px;
 }
 
 .string {
-    color: #ff8c00
+    color: #ffef57;
+    margin: 0 4px;
 }
-dl button{
+
+dl button {
     outline: none;
+    margin: 0 4px;
 }
+
 button,
 input {
     cursor: pointer;
@@ -129,6 +141,11 @@ input {
     vertical-align: middle;
 }
 
+dl button {
+    background-color: transparent;
+    margin-right: 6px 10px;
+}
+
 dl {
     margin: 4px;
 }
@@ -136,6 +153,7 @@ dl {
 dd {
     margin-left: 20px;
 }
+
 
 /* .colpick_submit {
     display: none;
@@ -154,4 +172,33 @@ dd {
     width: 270px;
     position: absolute;
     top: 11px;
+}
+
+#promptbox {
+    position: absolute;
+    display: none;
+    background-color: #999;
+    overflow-y: scroll;
+}
+
+#promptbox p {
+    margin: 0;
+    padding: 4px 8px;
+}
+
+#promptbox p:hover {
+    cursor: pointer;
+    background-color: #640a0a;
+    color: white;
+}
+
+b input {
+    background-color: transparent;
+    color: white;
+    padding-left: 4px;
+}
+
+pre {
+    color: #ccc;
+    font-size: 14px;
 }

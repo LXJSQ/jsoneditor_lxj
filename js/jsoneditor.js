@@ -3,8 +3,15 @@ window.onload = function() {
 }
 JE = {
         data: {},
+        namePrompt: [],
+        valuePrompt: [],
         treeUI: null,
         number: 0,
+        editEle: "",
+        /*正在编辑的元素 */
+        promptbox: "",
+        /*是否选则提示框里的内容*/
+        selectPromptbox: false,
         toTree: function() {
             /* JSON is converted to tree HTML, while formatting code */
             var draw = [],
@@ -73,29 +80,29 @@ JE = {
         highlight: function(nameStr, value, bracket, bool /*is it the last item*/ ) {
             this.number++;
             if (typeof value != "string")
-                var valueStr = bool ? value : value + ",";
+                var valueStr = bool ? value : value + "<em class='bracket'>,</em>";
             switch (typeof value) {
                 case "boolean":
                     return '<span  onselectstart="return false;" contenteditable="false">' + this.number + '</span>\
-                    <b  class="string">' + nameStr + ' <strong class="boolean">' + valueStr + '</strong>'
+                    <b  class="key">' + nameStr + ' <strong class="boolean">' + valueStr + '</strong>'
                     break;
                 case "number":
                     return '<span  onselectstart="return false;" contenteditable="false">' + this.number + '</span>\
-                    <b  class="string">' + nameStr + ' <cite class="number">' + valueStr + '</cite>'
+                    <b  class="key">' + nameStr + ' <cite class="number">' + valueStr + '</cite>'
                     break;
                 case "string":
                     {
                         if (bool) return '<span  onselectstart="return false;" contenteditable="false">' + this.number +
-                            '</span><b  class="string">' + nameStr + '<b class ="string">"' + value + '"</b>';
+                            '</span><b  class="key">' + nameStr + '<b class ="string">"' + value + '"</b>';
                         else return '<span  onselectstart="return false;" contenteditable="false">' + this.number +
-                            '</span><b  class="string">' + nameStr + '<b class ="string">"' + value + '" ,</b>';
+                            '</span><b  class="key">' + nameStr + '<b class ="string">"' + value + '"</b><em class="bracket">,</em>';
                         break;
                     }
                 case "object":
                     return '<span  onselectstart="return false;" contenteditable="false">' + this.number + '</span>\
-                    <button onclick="closeObject()" id="' + (this.number - 1) + '_btn">\
+                    <button onclick="JE.closeObject()" id="' + (this.number - 1) + '_btn">\
                     <i class="triangle_border_down" id="' + (this.number - 1) + '_i" data="' + (this.number - 1) + '_1">\
-                    </i></button><b class="string">' + nameStr + '</b><em class ="bracket">' + bracket + '</em>';
+                    </i></button><b class="key">' + nameStr + '</b><em class ="bracket">' + bracket + '</em>';
             }
         },
         /*The default deployable object when formatted.*/
@@ -129,36 +136,79 @@ JE = {
                 eText = bEleText.substr(bEleText.length - 1, 1) == ',' ?
                     bEleText.substr(1, bEleText.length - 3) :
                     bEleText.substr(1, bEleText.length - 2);
+                var ele = $(bEle[i]);
                 if (this.CheckIsColor(eText)) {
-                    var ele = $(bEle[i]);
                     ele.colpick({
                         layout: "rgbhex",
                         submitText: "ok",
                         colorScheme: "light",
                         onSubmit: function(hsb, hex, rgb, el) {
-                            JE.submitColor(hex, rgb, el);
+                            var val = $(el).html();
+                            if (val.match(/[rR][gG][Bb]/)) {
+                                var tempArr = val.split(",");
+                                var transparence = tempArr[tempArr.length - 1].split(")")[0];
+
+                                $(el).html("\"rgba(" + rgb.r + "," + rgb.g + "," + rgb.b + "," + transparence + ")\"")
+                            } else {
+                                $(el).html("\"#" + hex + "\"");
+                            }
                             $(el).colpickHide();
                         }
                     });
+                } else if (typeof ele.html() == "string") {
+                    bEle[i].onclick = function(e) {
+                        var width = event.target.innerText.length * 8 + "px";
+                        if (event.target.localName == "b") {
+                            JE.editEle = event.target;
+                            event.target.innerHTML = "<input type='text' value=" + event.target.innerText +
+                                " oninput='JE.showPromptBox()' onblur='JE.hiddenPromptbox()' style='width:" + width + "'/>";
+                            event.target.childNodes[0].focus();
+                        }
+                    };
                 }
             }
         },
-        /* confirm the color selected by the colorer */
-        submitColor: function(hex, rgb, el) {
-            var val = $(el).html();
-            if (val.match(/[rR][gG][Bb]/)) {
-                var tempArr = val.split(",");
-                var transparence = tempArr[tempArr.length - 2].split(")")[0];
-                val.substr(val.length - 1, val.length) == "," ?
-                    $(el).html("\"rgba(" + rgb.r + "," + rgb.g + "," + rgb.b + "," + transparence + ")\",") :
-                    $(el).html("\"rgba(" + rgb.r + "," + rgb.g + "," + rgb.b + "," + transparence + ")\"")
+        showPromptBox: function(e) {
+            var width = event.target.value.length * 8 + "px";
+            event.target.style.width = width;
+            var cursurPosition = event.target.selectionStart;
+            this.promptbox.style.top = event.target.offsetTop + 74;
+            this.promptbox.style.left = event.target.offsetLeft;
+            let newArr = [];
+            let promptboxStr = ""
+            for (let i = 0; i < JE.namePrompt.length; i++) {
+                if (JE.namePrompt[i].indexOf(event.target.value.substring(0, cursurPosition)) == 0) {
+                    newArr.push(JE.namePrompt[i]);
+                }
+            }
+            for (let j = 0; j < newArr.length; j++) {
+                promptboxStr += "<p onmousedown='JE.replaceOldStr()'>" + newArr[j] + "</p>"
+            }
+            this.promptbox.innerHTML = promptboxStr;
+            this.promptbox.style.display = "block";
+            if (parseInt(promptbox.offsetHeight) > 200) {
+                promptbox.style.height = "200px";
+                promptbox.style.overflowY = "scroll";
             } else {
-                val.substr(val.length - 1, val.length) == "," ?
-                    $(el).html("\"#" + hex + "\",") :
-                    $(el).html("\"#" + hex + "\"");
+                promptbox.style.height = "100px";
+                promptbox.style.overflowY = "auto";
             }
         },
+        replaceOldStr: function() {
+            this.selectPromptbox = true;
+            this.editEle.innerHTML = "\"" + event.target.innerText + "\"";
+        },
+        hiddenPromptbox: function() {
+            if (!this.selectPromptbox) {
+                JE.editEle.innerHTML = "\"" + event.target.value + "\"";
+            }
+            this.promptbox.style.display = "none";
+            this.selectPromptbox = false;
+        },
+        /* confirm the color selected by the colorer */
+        // submitColor: function(hex, rgb, el) {
 
+        // },
         /*Check if string color values */
         CheckIsColor: function(colorValue) {
             if (colorValue.match(/^#[0-9a-fA-F]{6}$/) == null) {
@@ -204,6 +254,7 @@ JE = {
             if (span) {
                 for (let i = 0; i < span.length; i++) span[i].style.display = "none";
             }
+            this.showObject();
             codeText = document.getElementById("tree").innerText;
             try {
                 JE.data = JSON.parse(this.formatStr(codeText));
@@ -212,7 +263,6 @@ JE = {
                     JE.treeUI.innerHTML = "<pre>" + str + "</pre>";
                 } else {
                     JE.toTree();
-                    this.showObject();
                     this.initClopick();
                     for (let i = 0; i < span.length; i++) {
                         span[i].style.display = "inline-block";
@@ -224,6 +274,33 @@ JE = {
                     span[i].style.display = "inline-block";
                 }
             };
+        },
+        closeObject: function() {
+            var dl = document.getElementById(event.target.id.split("_")[0] + "_dl");
+            var i = document.getElementById(event.target.id.split("_")[0] + "_i");
+            var eData = i.getAttribute("data");
+            if (eData.split("_")[1] == "1") {
+                var showI = eData.split("_")[0] + "_0";
+                this.showOrClose(dl, i, showI, "[...],{...}", "none", "triangle_border_right");
+            } else {
+                var closeI = eData.split("_")[0] + "_1";
+                this.showOrClose(dl, i, closeI, "[,{", "block", "triangle_border_down");
+            }
+        },
+        /* the open state of an object or array is changed by parameters*/
+        showOrClose: function(dl, ele, data, bracket, display, iClass) {
+            ele.setAttribute("data", data);
+            var firstChild = dl.childNodes[0].childNodes;
+            for (let i = 0; i < firstChild.length; i++) {
+                if (firstChild[i].nodeName == "EM") {
+                    firstChild[i].innerText.indexOf("[") > -1 ?
+                        firstChild[i].innerText = bracket.split(",")[0] :
+                        firstChild[i].innerText = bracket.split(",")[1];
+                }
+            }
+            dl.childNodes[1].style.display = display;
+            dl.childNodes[2].style.display = display;
+            ele.setAttribute("class", iClass);
         }
 
     }
@@ -233,6 +310,7 @@ JE.begin = function(data) {
             return document.getElementById(id)
         };
         JE.treeUI = $("tree");
+        JE.promptbox = $("promptbox")
         var saveJson = $("save_as");
         var selectMethod = $("selectMethod");
         var clearTree = $("clear_txt");
@@ -255,7 +333,7 @@ JE.begin = function(data) {
                     try {
                         JE.data = JSON.parse(JE.formatStr(data));
                         JE.toTree();
-                        initClopick();
+                        JE.initClopick();
                     } catch (e) {
                         var reg = /("([^\\\"]*(\\.)?)*")|('([^\\\']*(\\.)?)*')|(\/{2,}.*?(\r|\n))|(\/\*(\n|.)*?\*\/)/g;
                         data = data.replace(reg, function(word) {
@@ -296,7 +374,6 @@ JE.begin = function(data) {
         }
         formatTree.onclick = function() {
             JE.formatJson();
-
         }
         selectMethod.onchange = function() {
             JE.formatJson();
@@ -307,33 +384,9 @@ JE.begin = function(data) {
         }
     }
     /*Changes the open state of an object or array.*/
-function closeObject() {
-    var dl = document.getElementById(event.target.id.split("_")[0] + "_dl");
-    var i = document.getElementById(event.target.id.split("_")[0] + "_i");
-    var eData = i.getAttribute("data");
-    if (eData.split("_")[1] == "1") {
-        var showI = eData.split("_")[0] + "_0";
-        showOrClose(dl, i, showI, "[...],{...}", "none", "triangle_border_right");
-    } else {
-        var closeI = eData.split("_")[0] + "_1";
-        showOrClose(dl, i, closeI, "[,{", "block", "triangle_border_down");
-    }
-}
-/* the open state of an object or array is changed by parameters*/
-function showOrClose(dl, ele, data, bracket, display, iClass) {
-    ele.setAttribute("data", data);
-    var firstChild = dl.childNodes[0].childNodes;
-    for (let i = 0; i < firstChild.length; i++) {
-        if (firstChild[i].nodeName == "EM") {
-            firstChild[i].innerText.indexOf("[") > -1 ?
-                firstChild[i].innerText = bracket.split(",")[0] :
-                firstChild[i].innerText = bracket.split(",")[1];
-        }
-    }
-    dl.childNodes[1].style.display = display;
-    dl.childNodes[2].style.display = display;
-    ele.setAttribute("class", iClass);
-}
+
+
+
 /*editable div to implement copy and paste  for plain text.*/
 $('[contenteditable]').each(function() {
     try {
@@ -374,3 +427,157 @@ $('[contenteditable]').each(function() {
         }
     });
 });
+JE.namePrompt = [
+    'polygon-brush-type',
+    'visible',
+    'polygon-rotate-angle',
+    'polygon-dx',
+    'polygon-dy',
+    'polygon-fill',
+    'polygon-foreground-fill',
+    'polygon-gamma',
+    'polygon-gamma',
+    'polygon-geometry-transform',
+    'polygon-hatch-style',
+    'polygon-opacity',
+    'polygon-outline-color',
+    'polygon-outline-dasharray',
+    'polygon-outline-opacity',
+    'polygon-outline-width',
+    'polygon-linear-gradient',
+    'polygon-radial-gradient',
+    'polygon-texture-file',
+    'polygon-shadow-color',
+    'polygon-shadow-dx',
+    'polygon-shadow-dy',
+    'line-cap',
+    'line-color',
+    'line-dasharray',
+    'line-gamma',
+    'line-geometry-transform',
+    'line-join',
+    'line-miterlimit',
+    'line-offset',
+    'line-opacity',
+    'line-width',
+    'line-cap-inner',
+    'line-color-inner',
+    'line-dasharray-inner',
+    'line-join-inner',
+    'line-miterlimit-inner',
+    'line-width-inner',
+    'line-cap-center',
+    'line-color-center',
+    'line-dasharray-center',
+    'line-join-center',
+    'line-miterlimit-center',
+    'line-width-center',
+    'line-oneway',
+    'point-glyph',
+    'point-linear-gradient',
+    'point-radial-gradient',
+    'point-fill',
+    'point-glyph-name',
+    'point-outline-color',
+    'point-outline-width',
+    'point-size',
+    'point-rotate-angle',
+    'point-dx',
+    'point-dy',
+    'point-file',
+    'point-opacity',
+    'point-symbol-type',
+    'point-transform',
+    'point-type',
+    'shield-icon-type',
+    'shield-icon-symbol-type',
+    'shield-icon-size',
+    'shield-icon-size',
+    'shield-icon-src',
+    'shield-icon-color',
+    'shield-icon-outline-color',
+    'shield-icon-outline-width',
+    'this.iconSrc',
+    'this.iconSrc',
+    'shield-name',
+    'shield-font',
+    'shield-align',
+    'shield-rotate-angle',
+    'shield-avoid-edges',
+    'shield-date-format',
+    'shield-dx',
+    'shield-dy',
+    'shield-face-name',
+    'shield-fill',
+    'shield-force-horizontal -for-line',
+    'shield-halo-fill',
+    'shield-halo-fill',
+    'shield-halo-radius',
+    'shield-halo-radius',
+    'shield-margin',
+    'shield-max-char-angle-delta',
+    'shield-min-distance',
+    'shield-min-padding',
+    'shield-name',
+    'shield-numeric-format',
+    'shield-opacity',
+    'shield-orientation',
+    'shield-placements',
+    'shield-placements',
+    'shield-placement-type',
+    'shield-placement-type',
+    'shield-size',
+    'shield-spacing',
+    'shield-text-format',
+    'shield-wrap',
+    'shield-wrap',
+    'shield-wrap-character',
+    'shield-wrap-width',
+    'textalign',
+    'textavoidedge',
+    'textdx',
+    'textdy',
+    'textfont',
+    'textfill',
+    'textforcehorizontal -for-line',
+    'texthalofill',
+    'texthaloradius',
+    'textmargin',
+    'textmaskcolor',
+    'textmaskmargin',
+    'textmaskoutlinecolor',
+    'textmaskoutlinewidth',
+    'textmasktype',
+    'textmaxcharangle',
+    'textmindistance',
+    'textminpadding',
+    'textname',
+    'textopacity',
+    'textrotateangle',
+    'textplacements',
+    'textplacementtype',
+    'textpolygonlabelinglocation',
+    'textspacing',
+    'textsplinetype',
+    'textwrapbefore',
+    'textwrapwidth',
+    'texttextformat',
+    'textdateformat',
+    'textnumericformat',
+    'filter'
+];
+JE.valuePrompt = [
+    '@path',
+    '@baseland_polygon_fill',
+    '@baseland_text_fill',
+    '@baseland_text_fill_lighter',
+    '@landfill',
+    '@baseland_text_halo_fill',
+    '@water_text_fill',
+    '@water_text_halo_fill',
+    '@text_name',
+    '@text_align',
+    '@polygon_text',
+    '@text_placements', '@countryLineColor', '@lineWidth', '@water', '@landbackgroundfill', '@park', '@wood', '@golf_courseborder', '@golf_course', '@protected_areaborder,@protected_area', '@aerodrome', '@national_park', '@reservoir', '@orchard,@vineyards', '@orchardbackground', '@vineyardsbackground', '@railway', '@cemetery', '@quarry', '@marina,@water_park', '@basin', '@basinbackground', '@wetland', '@village_green,@meadow,@common,@garden', '@recreation_ground', '@farmyard,@farm,@farmland', '@industrial', '@retail', '@commercial', '@oneway_file', '@forest', '@military', '@militarybackground', '@grass', '@residential', '@beach', '@grassland', '@heath', '@mud', '@mudbackground', '@sand', '@wetlandbackground', '@scrubborder', '@scrub', '@water_parkborder,@marinaborder', '@trackborder', '@track', '@pitchborder', '@pitch', '@stadiumborder', '@stadium', '@sports_centre', '@playgroundborder', '@playground', '@dog_park', '@nature_reserve', '@attractionborder', '@attraction', '@zoo', '@helipad', '@university,@college,@kindergarten,@school', '@parking', '@swimming_poolborder', '@swimming_pool', '@apronborder', '@apron', '@runway', '@building_fill', '@building_border', '@squareborder,@building_fillborder', '@squareborderwidth', '@radius', '@line_cap,@countryLineCap', '@shield_fill', '@shield_name', '@array1', '@array2', '@rail_inner,@tram_inner,@narrow_gauge_inner,@light_rail_inner,@miniature_inner', '@subway_center', '@monorail_inner', '@taxiway_outer', '@runway_outer', '@cable_car_outer', '@pier_outer,@pier', '@motorway6_9', '@motorway_outer', '@motorway_inner', '@motorway_link_outer', '@motorway_link_inner', '@trunk_outer'
+
+]
