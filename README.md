@@ -4,5 +4,4 @@
 
 ## 示例
 
-![](./images/sample.jpg)
-
+![](./images/sample.png)
